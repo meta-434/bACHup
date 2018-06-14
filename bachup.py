@@ -9,7 +9,7 @@ import string
 import random
 import distutils
 
-build = 'v0.2a1(inc)'
+build = 'v0.2a7(inc)'
 now = datetime.datetime.now()
 
 class payload:
