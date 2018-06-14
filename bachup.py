@@ -7,9 +7,10 @@ import datetime
 import textwrap
 import string
 import random
+import distutils
 
 build = 'v0.2a1(inc)'
-global now = datetime.datetime.now()
+now = datetime.datetime.now()
 
 class payload:
     def __init__(self, id, source, time):
@@ -27,7 +28,7 @@ def writeToPrefs(payloadInstance):
         f.write('\n' + self.id  + ' | ' + self.source + ' | ' + self.time)
         f.close()
 
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
 def startUp():
@@ -50,18 +51,39 @@ def startUp():
 
 def init():
     payloadPath = ''
+    idHistory = []
+    s3 = boto3.client('s3')
+    response = s3.list_buckets()
+    buckets = [bucket['Name'] for bucket in response ['Buckets']]
 
-    #existPrefs = bool(distutils.util.strtobool(input('Would you like to use an exiting prefs.txt file?')))
-    payloadPath = input('Enter the full filepath to the source enclosing folder or single file: ')
+    existPrefs = input('Would you like to use an exiting prefs.txt file? y/n ')
+    if existPrefs == "y" or existPrefs == "Y":
+        with open('prefs.txt') as ins:
+            history = [line.rstrip('\n') for line in ins]
+            for item in history:
+                idHistory.append(item[:6])
 
+        print("\nBucket list: %s" % buckets)
+        print("idHistory list: %s" % idHistory)
 
+        #print(set(idHistory).intersection(set(buckets)))
+        if bool(set(idHistory).intersection(set(buckets))):
+            print("SUCCESS - MATCH FOUND.\n")
+        else:
+            print("NO MATCHING BUCKETS FOUND.\n")
+        ins.close()
 
+    inOrOut = input('[B]ackup / [R]estore? ')
+    if inOrOut == "B" or inOrOut == "b":
+        payloadPath = input('Enter the full filepath to the source enclosing folder or single file: ')
 
-
+    else:
+        restoreBucket = input("Enter id of bucket to preview contents for restore: ")
+        sys.exit(1)
 
 
 def payloadLocate():
-    if os.path.exists(payload.source) and os.path.isdir(payload.source):
+    if os.path.exists(payloadPath) and os.path.isdir(payloadPath):
         print(os.listdir(source))
         return os.listdir(source)
     else:
@@ -70,7 +92,7 @@ def payloadLocate():
 def main():
     startUp()
     init()
-    getSrcStatus()
+    payloadLocate()
 
 if __name__ == "__main__":
     print(main())
